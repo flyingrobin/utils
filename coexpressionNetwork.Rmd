@@ -1,0 +1,149 @@
+---
+title: "Coexpression Network"
+author: "Jordan Bryan"
+date: "June 8, 2016"
+output: html_document
+runtime: shiny
+---
+
+```{r, echo=FALSE, message=FALSE}
+
+library(taigr)
+library(visNetwork)
+library(magrittr)
+library(cowplot)
+
+getFeature <- reactive({
+      if(input$dataset == "Ach"){
+    curr.dataset <- t(load.from.taiga(data.name="achilles-v2-20-1-demeter-z-scores-ignoring-expression-expanded-families-", data.version=2))
+  } else if(input$dataset == "GE"){
+    curr.dataset <- load.from.taiga(data.name="ccle-rnaseq-gene-expression-rpkm-for-analysis-in-manuscripts-protein-coding-genes-only-hgnc-mapped", data.version=3)
+  } else if(input$dataset == "CN"){
+    curr.dataset <- t(load.from.taiga(data.name="ccle-copy-number-variants-hgnc-mapped", data.version=1))
+  } else if(input$dataset == "rnaMUTdmg"){
+    curr.dataset <- load.from.taiga(data.name="ccle-rna-mutations-damaging", data.version=4)
+  } else if(input$dataset == "dnaMUTdmg"){
+    curr.dataset <- load.from.taiga(data.name="ccle-dna-mutations-damaging", data.version=6)
+  } else if(input$dataset == "rnaMUTmiss"){
+    curr.dataset <- load.from.taiga(data.name="ccle-rna-mutations-missense-in-frame-hotspots", data.version=2)
+  } else if(input$dataset == "dnaMUTmiss"){
+    curr.dataset <- load.from.taiga(data.name="ccle-dna-mutations-missense-in-frame-hotspots", data.version=5)
+  }
+  
+  
+  # Generate empirical null distribution
+  random.genes <- sample(1:(ncol(curr.dataset)^2), 10000)
+  
+  null <- c()
+  for(i in random.genes){
+    null <- c(null, cor(curr.dataset[, (i-1)%%ncol(curr.dataset) + 1], curr.dataset[, ceiling(i/ncol(curr.dataset))]))
+  }
+  
+  return(list(Dataset=curr.dataset, Null=null))
+  
+})   
+
+makeCorFeatures <- reactive({
+
+  curr.dataset <- getFeature()
+  null <- curr.dataset[["Null"]]
+  curr.dataset <- curr.dataset[["Dataset"]]
+  
+  #
+  # Obtain and separate input genes
+  gene.list <- strsplit(input$genes, ", ")[[1]]
+  #
+  any.is.single.char <- FALSE
+  for(i in 1:length(gene.list)){
+    if(nchar(gene.list[i]) < 3){
+      any.is.single.char <- TRUE
+    }
+  }
+  if("" %in% gene.list || length(gene.list) == 0 || any.is.single.char){
+    dummy <- matrix(0, nrow=1, ncol=1)
+    colnames(dummy) <- "NULL"
+    row.names(dummy) <- "NULL"
+    return(dummy)
+  } else {
+    
+    if(length(gene.list > 1)){
+      cor.features <- cor(curr.dataset[, grepl(paste(gene.list, collapse="|"), colnames(curr.dataset))], 
+                      use = "pairwise.complete.obs")
+    } else {
+      cor.features <- cor(curr.dataset[, grepl(gene.list, colnames(curr.dataset))], 
+                      use = "pairwise.complete.obs")
+    }
+
+  
+    return(list(CorMat=cor.features, Null=null))
+  }
+})
+
+
+```
+
+# Instructions
+
+Type in a list of genes to create a simple coexpression network based on the Pearson correlation coefficient between the expression levels of the genes across cell lines. <span style = "color:red">Red</span> edges represent negative correlations and <span style = "color:green">Green</span> edges represent positive correlations. The edge thickness reflects the significance of the relationship based on an empirical null.
+
+
+```{r, echo=FALSE}
+
+inputPanel(
+  selectInput("dataset", label = "Feature dataset: ", 
+              choices = c("Ach", "GE", "CN", "rnaMUTdmg", "rnaMUTmiss", "dnaMUTdmg", "dnaMUTmiss"), selected = "GE"),
+  textInput("genes", label = "Gene Set: ", value = "EGFR, ERBB2, GRB"),
+  sliderInput("cor.threshold", label = "Threshold: ",
+              min = 0.1, max = 1, value = 1, step = 0.01)
+)
+
+renderVisNetwork({
+  
+  # Set threshold for correlation/RNMI network construction
+  res <- makeCorFeatures()
+  null <- res[["Null"]]
+  cor.features <- res[["CorMat"]]
+  cor.features[abs(cor.features) < input$cor.threshold] <- 0
+  nodes <- data.frame(id = gsub(" .*", "", colnames(cor.features)))
+  #nodes$size <- 5
+  col.names <- gsub(" .*", "", colnames(cor.features))
+  row.names <- col.names
+  from <- c()
+  to <- c()
+  color <- c()
+  width <- c()
+  label <- c()
+  for(i in 1:(nrow(cor.features)-1)){
+    for(j in (i+1):ncol(cor.features)){
+      if(cor.features[i,j] != 0){
+        from <- c(from, row.names[i])
+        to <- c(to, col.names[j])
+        color <- c(color, sign(cor.features[i,j]))
+        is.sig <- ifelse(sign(cor.features[i,j]) == -1, 
+                         sum(null < cor.features[i,j])/length(null) < 0.05, 
+                         sum(null > cor.features[i,j])/length(null) < 0.05)
+        width <- c(width, ifelse(is.sig, 3, 0.5))
+        label <- c(label, round(cor.features[i,j], 2))
+      }
+    }
+  }
+  color <- ifelse(color == -1, "red", "green")
+  edges <- data.frame(from = from, to = to, color = color, width=width, label=label)
+  visNetwork(nodes, edges, width="100%", height = '1000px') %>% 
+    visOptions(highlightNearest = TRUE) %>%
+    visEdges(font = list(size = 10))
+  
+})
+
+renderPlot({
+    # Set threshold for correlation/RNMI network construction
+  res <- makeCorFeatures()
+  null <- res[["Null"]]
+  
+  qplot(null, main="Null Distribution of Correlation Coefficients")
+})
+
+```
+
+
+
