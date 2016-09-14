@@ -6,7 +6,7 @@ library(BiocParallel)
 library(devtools)
 source_url("https://raw.githubusercontent.com/ggrothendieck/gsubfn/master/R/list.R")
 
-run_edgeR <- function(count.data, group, design, test = 'exact'){
+run_edgeR <- function(count.data, group, design, test = 'exact', multi.factor = FALSE){
   print("Start running edgeR...")
   cds <- DGEList(counts=count.data, group = group)
   
@@ -20,8 +20,12 @@ run_edgeR <- function(count.data, group, design, test = 'exact'){
   
   # Estimating Dispersions
   print("Estimating dispersions...")
-  cds <- estimateDisp(cds, design = design)
+  cds <- estimateDisp(cds, design = design, robust=TRUE)
   
+  # if multi.factor is true, return cds object and for specific tests
+  if(multi.factor){
+    return(cds)
+  }
   print("Detecting differentially expressed genes...")
   stopifnot(test %in% c('exact', 'likelihood', 'quasi'))
   if(test == 'exact'){
@@ -31,8 +35,14 @@ run_edgeR <- function(count.data, group, design, test = 'exact'){
   }else if(test == 'quasi'){
     # Quasi-likelihood F-tests
     fit <- glmQLFit(cds, design)
-    qlf <- glmQLFTest(fit, coef=2)
+    qlf <- glmQLFTest(fit, coef= 3:26)
     res_edger <-  topTags(qlf, n = Inf) %>% as.data.frame()
+  
+  }else if(test == 'likelihood'){
+    # Quasi-likelihood F-tests
+    fit <- glmFit(cds, design)
+    lrt <- glmLRT(fit)
+    res_edger <-  topTags(lrt, n = Inf) %>% as.data.frame()
   }
   print("Done!")
   return(list(DGEList = cds, results = res_edger))
