@@ -18,6 +18,14 @@ ccle_expr_cleaning_fromTaiga <- function(mx.ccle, log = FALSE, min.rpkm = -7){
 
   gene.lookup <- gene.lookup$V1 %>% as.character()
   names(gene.lookup) <- gene.ids # gene lookup table as a vector with names
+  
+  # switch gene ID and gene symbol
+  geneID.lookup <- names(gene.lookup)
+  names(geneID.lookup) <- gene.lookup
+  
+  # combine the two
+  gene.lookup <- c(gene.lookup, geneID.lookup)
+  
   colnames(mx.ccle) <- gene.ids
 
   if(log){
@@ -28,6 +36,20 @@ ccle_expr_cleaning_fromTaiga <- function(mx.ccle, log = FALSE, min.rpkm = -7){
 
   # return transpose matrix (row as genes and column as cell lines) and gene lookup table
   list(t(mx.ccle), gene.lookup)
+}
+prism_expr_cleaning_fromTaiga <- function(mx.prism, log = FALSE, min.rpkm = -7){
+  # Args:
+  #   mx.ccle: ccle gene expression matrix
+  #   log: boolean indicating whether to log2 transform the expression matrix
+  #   min.rpkm: if log is TRUE, convert -Inf entries to NA and cap min of log2(rpkm) as -7
+  
+  mx.prism <- t(mx.prism)
+  if(log){
+    mx.prism <- log2(mx.prism)
+    mx.prism[is.infinite(mx.prism)] <- NA
+    mx.prism[mx.prism < min.rpkm] <- min.rpkm
+  }
+  mx.prism
 }
 
 ccle_expr_cleaning <- function(df.ccle){
@@ -65,9 +87,10 @@ ccle_prism_data_cleaning <- function(df.ccle, df.prism, prism.cellinfo = 'RNAseq
   rownames(df.prism) <- names(gene.lookup)
 
   # replace prism cell line names with standard CCLE names
-  ccle_name_prism25 <- read.csv(prism.cellinfo)
-  nm <- gsub('[\\. \\-]','_', ccle_name_prism25$Cell.Line)
-  ccle_name_prism25 <- ccle_name_prism25$CCLE.Name %>% as.character()
+  cellinfo <- read.csv(prism.cellinfo)
+  rownames(cellinfo) <- cellinfo$CCLE.Name
+  nm <- gsub('[\\. \\-]','_', cellinfo$Cell.Line)
+  ccle_name_prism25 <- cellinfo$CCLE.Name %>% as.character()
   names(ccle_name_prism25)  <- nm
 
   nm <- gsub('[\\.-]','_', colnames(df.prism))
@@ -77,7 +100,7 @@ ccle_prism_data_cleaning <- function(df.ccle, df.prism, prism.cellinfo = 'RNAseq
   #   ccle: cleaned ccle data matrix
   #   prism: cleaned prism data matrix
   #   lookup: gene lookup table
-  list(ccle = df.ccle, prism = df.prism, lookup = gene.lookup) # return a list and a data frame
+  list(ccle = df.ccle, prism = df.prism, lookup = gene.lookup, cell.info = cellinfo) # return a list and a data frame
 
 }
 

@@ -45,10 +45,66 @@ ZRO <- function(mx, ccle.expr){
   list(z, rank, outlier)
 }
 
-# plotting functions of ZRO
-# beeswarm <- beeswarm(boxplot.stats(z.auc2expr[1, ])$out)
-# ggplot(data = data.frame(z = z.auc2expr[1, ]), aes(x = 1, y = z)) +
-#   stat_boxplot(geom ='errorbar', width = 0.5) +
-#   geom_boxplot(outlier.shape = NA) +
-#   geom_point(data = beeswarm, aes(x = x, y = y)) +
-#   ggtitle(rownames(z.auc2expr)[1]) + xlab("")
+# Z-Rank plot for a list of genes
+#' @param gene.list input vector of genes, order of the gene.list represent the rank of genes. genes are column names of Z, R and O matrix 
+#' @param z matrix of z 
+#' @param rank matrix of rank
+#' @param outlier matrix of outlier
+#' @param gene.rank: ranking of the gene. if not provided the gene.list will be rank, starting with rank 1
+#' @param cpd.group 
+#' @param gene.lookup named vector to switch geneID with gene symbol back and forth
+#' @param return ggplot of ZRank and legend separately
+
+plot_ZRO <- function(gene.list, z, rank, outlier, 
+                     gene.rank = gene.list, cpd.group, 
+                     gene.lookup = NULL, repurposing = FALSE){
+  source("~/Documents/Broad/Utils/grid_arrange_shared_legend.R")
+  # aesthetic settings
+  labels <- c('-2' = 'Extreme Lower', 
+              '-1' = 'Lower', 
+              '0' = 'None', 
+              '1' =  'Upper', 
+              '2'  = 'Extreme upper')
+  colors <-  c('-2' = 'orange', 
+               '-1' = 'blue', 
+               '0' = 'black', 
+               '1' =  'red', 
+               '2'  = 'green')
+  sizes <-  c('TRUE' = 2.5, 'FALSE' = 1)
+  shapes <- c('TRUE' = 17, 'FALSE' = 19)
+  
+  # ZRank plot list
+  g.ZRank.list <- lapply(gene.list, function(gene){
+    # generate a legend with all outlier category
+    df <- data.frame(z = z[, gene],
+                     rank = rank[, gene],
+                     outlier = outlier[, gene] %>% as.factor(),
+                     TLCD1.cpds = rownames(rank) %in% cpd.group)
+    # plot title: row1 gene/cpd name; row2 outlier ?out of 8, rank
+    if(repurposing){
+      title.row1 <- get_ZRankplot_title_REP(gene, gene.lookup)
+    }else{
+      title.row1 <- paste(gene, gene.lookup[gene])
+    }
+    
+    title.row2 <- paste(sum(df[df$outlier != '0', 'TLCD1.cpds']), '/8, rank = ', which(gene.rank == gene), sep = '')
+    ggplot(df, aes(x = z, y = rank)) +
+      geom_point(aes(color = outlier,  size = TLCD1.cpds, shape = TLCD1.cpds)) + 
+      scale_y_log10(
+        breaks = scales::trans_breaks("log10", function(x) 10^x),
+        labels = scales::trans_format("log10", scales::math_format(10^.x))
+      )  + 
+      scale_color_manual(labels= labels, values = colors) +
+      scale_size_manual(values = sizes) +
+      scale_shape_manual(values = shapes) +
+      ggtitle(paste(title.row1, title.row2, sep = '\n')) + 
+      theme(legend.position="none")
+  })
+  
+  # generate legend
+  g.legend <- ggplot(data.frame(x = rnorm(10), y = rnorm(10), outlier = as.factor(c(-2,-1,0,1,2)) ,TLCD1.cpds = c(TRUE, FALSE)), aes(x, y)) + geom_point(aes(color = outlier, size = TLCD1.cpds, shape = TLCD1.cpds)) + scale_color_manual(labels= labels, values = colors) +
+    scale_size_manual(values = sizes) +
+    scale_shape_manual(values = shapes) 
+  legend <- gg_legend_extract(g.legend, legend.panel = F)
+  list(g.ZRank.list, legend)
+}
