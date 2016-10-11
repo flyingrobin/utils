@@ -6,6 +6,11 @@ library(tidyr)
 library(magrittr)
 library(rvest)
 library(stringr)
+
+
+
+##############################################################
+# code for generating the msigdb binary matrix
 # gene alias lookup table
 source("~/Documents/Broad/Utils/alias2geneSymbol.R")
 alias.lookup <- alias2geneSymbol()
