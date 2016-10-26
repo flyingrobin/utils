@@ -66,7 +66,8 @@ batch_fisher_test <- function(input.list, feat.list, min.input.size = 10, min.fe
     # convert dgCMatrix object to a easily readible data frame
     sparse.mx <- summary(sparse.mx) %>% as.data.frame()
     if(nrow(sparse.mx) == 0){
-      sparse.df <- data.frame(query = NA, feat.block =  names(res.list)[i],
+      sparse.df <- data.frame(query = NA, query.size = NA, 
+                              feat.block =  names(res.list)[i],
                               geneset.name = NA, geneset.size = NA, overlap = NA,
                               FDR = NA)
     }else{
@@ -81,7 +82,8 @@ batch_fisher_test <- function(input.list, feat.list, min.input.size = 10, min.fe
 
     res.sparse <- rbind(res.sparse, sparse.df)
   }
-  res.sparse %>%
-    separate('query' ,c("cell.line", 'UpDn', 'filter'), sep = '\\.') %>%
-    transform(geneset.name = as.character(geneset.name))
+  # res.sparse %>%
+  #   separate('query' ,c("cell.line", 'UpDn', 'filter'), sep = '\\.') %>%
+  #   transform(geneset.name = as.character(geneset.name))
+  res.sparse
 }

@@ -5,6 +5,14 @@ library(stringr)
 library(devtools)
 source_url("https://raw.githubusercontent.com/ggrothendieck/gsubfn/master/R/list.R")
 
+
+ccle.expr_log_transform <- function(mx.ccle, min.rpkm = -7){
+  mx.ccle <- log2(mx.ccle)
+  mx.ccle[is.infinite(mx.ccle)] <- NA
+  mx.ccle[mx.ccle < min.rpkm] <- min.rpkm
+  mx.ccle
+}
+
 # parse ccle expression mx imported from Taiga
 ccle_expr_cleaning_fromTaiga <- function(mx.ccle, log = FALSE, min.rpkm = -7){
   # Args:
