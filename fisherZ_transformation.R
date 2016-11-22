@@ -1,4 +1,7 @@
 library(dplyr)
+library(devtools)
+source_url("https://raw.githubusercontent.com/ggrothendieck/gsubfn/master/R/list.R")
+
 
 # Count complete pairs of each pairwise correlation
 count_complete_pairs <-function(x, y = NULL){
@@ -32,6 +35,9 @@ fisherZ <- function(x, y = NULL){
     mx_cor <- cor(x, use = "pairwise.complete.obs")
     cor_complete_pair_count <- count_complete_pairs(x)
   }else{
+    col.common <- intersect(colnames(x), colnames(y))
+    x <- x[, col.common]
+    y <- y[, col.common]
     mx_cor <- cor(x, y, use = "pairwise.complete.obs")
     cor_complete_pair_count <- count_complete_pairs(x, y)
     
@@ -39,5 +45,6 @@ fisherZ <- function(x, y = NULL){
   
   print("Computing Fisher transformation...")
   z <- 0.5 * (log(1+mx_cor) - log(1-mx_cor)) * sqrt(cor_complete_pair_count-3)
-  z
+  #z
+  list(cor = mx_cor, z = z)
 }

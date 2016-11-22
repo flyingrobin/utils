@@ -1,4 +1,5 @@
 {
+  library(VennDiagram)
   vd.param <- list(filename = NULL, height = 100, width = 100, scale = T, 
                    cat.fontface = 2, cat.pos = c(-10, 10), cat.dist = c(0.02, 0.05), margin = .08,
                    main.pos = c(0.5, 0.95), main.cex = 2, cat.fontfamily = "sans", cat.cex = 1.5, cex = 2,

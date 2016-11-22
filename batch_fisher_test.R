@@ -82,8 +82,5 @@ batch_fisher_test <- function(input.list, feat.list, min.input.size = 10, min.fe
 
     res.sparse <- rbind(res.sparse, sparse.df)
   }
-  # res.sparse %>%
-  #   separate('query' ,c("cell.line", 'UpDn', 'filter'), sep = '\\.') %>%
-  #   transform(geneset.name = as.character(geneset.name))
   res.sparse
 }

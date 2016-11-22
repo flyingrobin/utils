@@ -6,7 +6,8 @@
 #' @param value.col a string or column number of the value column 
 #' @param both.way = F logical of whether returning a lookup table of both key-to-value and value-to-key. If ture, require 1-to-1 relationship of key-value pairs
 df_to_lookup <- function(df, key.col, value.col, both.way = F){
-  stopifnot(nrow(df) == length(df[, key.col] %>% unique())) # key column must have all unique entries
+  df <- as.data.frame(df)
+  stopifnot(nrow(df) == nrow(df[, key.col] %>% unique())) # key column must have all unique entries
   values <- df[, value.col]
   names(values) <- df[, key.col]
   
