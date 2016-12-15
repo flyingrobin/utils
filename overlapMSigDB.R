@@ -8,6 +8,11 @@ if(!exists('list.msigdb')){
   load("~/Documents/Broad/Utils/data/msigdb_binary_mx.RData")
 }
 
+if(!exists('list_rep_anno')){
+  list_rep_anno <- readRDS("~/Documents/Broad/Utils/data/repurposing_binary_mx.rds")
+}
+
+
 # convert mx.msigdb to list of feat.blocks ("GO", "Hallmk", "Pertb", "Pthway")
 msigdb_to_list <- function(mx.msigdb){
   feat.block <-  levels(gsub('[[:digit:]]*', '', colnames(mx.msigdb)) %>% as.factor())
@@ -28,8 +33,18 @@ msigdb_to_list <- function(mx.msigdb){
 #' @return a data frame containing feature blocks, row and colmumn number and names and the value
 
 overlapMsigDB <- function(input.list, min.input.size = 10, min.feat.size = 2, cutoff = 1e-10){
-  batch_fisher_test(input.list, list.msigdb, cutoff = 1e-10) %>%
+  batch_fisher_test(input.list, feat.list = list.msigdb, 
+                    min.input.size = min.input.size, 
+                    min.feat.size = min.feat.size, 
+                    cutoff = cutoff) %>%
     mutate(geneset.name = genesets.lookup[geneset.name])
 }
 
+
+overlapREP <- function(input.list, min.input.size = 10, min.feat.size = 2, cutoff = 1e-10){
+  batch_fisher_test(input.list, feat.list = list_rep_anno, 
+                    min.input.size = min.input.size, 
+                    min.feat.size = min.feat.size, 
+                    cutoff = cutoff)
+}
 

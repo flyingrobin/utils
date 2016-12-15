@@ -32,7 +32,7 @@ batch_fisher_test <- function(input.list, feat.list, min.input.size = 10, min.fe
     #m the number of white balls in the urn. (size of a gene set)
     #n the number of black balls in the urn. (total number of the genes - size of a gene set)
     #k the number of balls drawn from the urn. (size of the input gene list)
-    
+
     q <- sapply(input.list, function(x) {colSums(feat_mx[rownames(feat_mx) %in% x, ])}) %>% t()
     m <- matrix(colSums(feat_mx), nrow(q), ncol(q), byrow = T)
     n <- matrix(nrow(feat_mx), nrow(q), ncol(q)) - m # n is the number of genes that not in the geneset
@@ -65,6 +65,7 @@ batch_fisher_test <- function(input.list, feat.list, min.input.size = 10, min.fe
 
     # convert dgCMatrix object to a easily readible data frame
     sparse.mx <- summary(sparse.mx) %>% as.data.frame()
+
     if(nrow(sparse.mx) == 0){
       sparse.df <- data.frame(query = NA, query.size = NA, 
                               feat.block =  names(res.list)[i],
@@ -76,8 +77,9 @@ batch_fisher_test <- function(input.list, feat.list, min.input.size = 10, min.fe
                               feat.block =  names(res.list)[i],
                               geneset.name = colnames(q.val)[sparse.mx$j] %>% as.character(),
                               geneset.size = apply(sparse.mx, 1, function(x) geneset.size[x[[1]], x[[2]]]),
-                              overlap =apply(sparse.mx, 1, function(x) overlap[x[[1]], x[[2]]]),
-                              FDR = sparse.mx$x)
+                              overlap =apply(sparse.mx, 1, function(x) overlap[x[[1]], x[[2]]]), 
+                              FDR = sparse.mx$x
+                              )
     }
 
     res.sparse <- rbind(res.sparse, sparse.df)

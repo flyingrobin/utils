@@ -25,7 +25,7 @@ count_complete_pairs <-function(x, y = NULL){
 # Fisher transformation of correlation coefficient
 fisherZ <- function(x, y = NULL){
   
-  print("Computing correlation...")
+  #print("Computing correlation...")
   if(is.null(y)){
     mx_cor <- cor(x, use = "pairwise.complete.obs")
     cor_complete_pair_count <- count_complete_pairs(x)
@@ -38,7 +38,7 @@ fisherZ <- function(x, y = NULL){
     cor_complete_pair_count[cor_complete_pair_count < 3] <- NA
   }
   
-  print("Computing Fisher transformation...")
+  #print("Computing Fisher transformation...")
   z <- 0.5 * (log(1+mx_cor) - log(1-mx_cor)) * sqrt(cor_complete_pair_count-3)
   z
 }
