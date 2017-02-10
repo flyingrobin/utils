@@ -1,6 +1,7 @@
 library(dplyr)
 library(useful)
 library(magrittr)
+library(Matrix)
 library(doMC)
 doMC::registerDoMC(cores=36) # or however many cores you have access to
 

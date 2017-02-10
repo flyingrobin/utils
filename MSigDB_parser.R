@@ -40,9 +40,9 @@ gmt.list.geneset.corrected <-
 })
 
 gmt.list$GO$genesets <- gmt.list.geneset.corrected$GO
-gmt.list$Hallmark$genesets <- gmt.list.geneset.corrected$Hallmark
-gmt.list$Pathway$genesets <- gmt.list.geneset.corrected$Pathway
-gmt.list$Perturb$genesets <- gmt.list.geneset.corrected$Perturb
+gmt.list$Hallmk$genesets <- gmt.list.geneset.corrected$Hallmk
+gmt.list$Pthwy$genesets <- gmt.list.geneset.corrected$Pthwy
+gmt.list$Pertb$genesets <- gmt.list.geneset.corrected$Pertb
 
 # convert gene set list to binary matrix
 gmt.list.flat <- unlist(gmt.list, recursive = F)
@@ -71,7 +71,7 @@ for(i in 1:length(genesets.union)){
 mx.msigdb <- mx.msigdb[rownames(mx.msigdb) %in% anno.gene$GeneSymbol, ]
 
 # convert to sparsematrix
-mx.msigdb.sparse <- Matrix(mx.msigdb, sparse = TRUE)
+mx.msigdb.sparse <- Matrix::Matrix(mx.msigdb, sparse = TRUE)
 
 list_msigdb <- 
   lapply(c('GO', 'Hallmk', 'Pthwy', 'Pertb'), function(i){
@@ -79,15 +79,15 @@ list_msigdb <-
 }) %>% set_names(c('GO', 'Hallmk', 'Pthwy', 'Pertb'))
 
 # Gene set description, scraping form GSEA webside using rvest
-genesets.dscrp <- lapply(c(3,6,9,12), function(i){
-  sapply(gmt.list.flat[[i]], function(url){
-    sample.page <- read_html(url)
-    dscrp.brief <- sample.page %>% html_nodes("tr:nth-child(3) td") %>% html_text()
-    dscrp.brief[1]
-  }, USE.NAMES = F)
-})
-genesets.dscrp <- unlist(genesets.dscrp)
-names(genesets.dscrp) <- unlist(gmt.list.flat[c(2,5,8,11)])
+# genesets.dscrp <- lapply(c(3,6,9,12), function(i){
+#   sapply(gmt.list.flat[[i]], function(url){
+#     sample.page <- read_html(url)
+#     dscrp.brief <- sample.page %>% html_nodes("tr:nth-child(3) td") %>% html_text()
+#     dscrp.brief[1]
+#   }, USE.NAMES = F)
+# })
+# genesets.dscrp <- unlist(genesets.dscrp)
+# names(genesets.dscrp) <- unlist(gmt.list.flat[c(2,5,8,11)])
 
-save(list_msigdb, genesets.lookup, genesets.dscrp, file = "~/Documents/Broad/Utils/data/msigdb_binary_mx.RData")
+save(list_msigdb, genesets.lookup, file = "~/Documents/Broad/Utils/data/msigdb_binary_mx.RData")
 saveRDS(list_msigdb, file = "~/Documents/Broad/Utils/data/msigdb_binary_mx.RDS")
