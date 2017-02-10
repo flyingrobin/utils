@@ -1,30 +1,37 @@
 library(dplyr)
+library(useful)
+library(magrittr)
 library(doMC)
-doMC::registerDoMC(cores=32) # or however many cores you have access to
+doMC::registerDoMC(cores=36) # or however many cores you have access to
 
 linlog_hybrid <- function(x, c = 20, base = 10){
   ifelse(x < c, x, c*log(x/c, base = base) + c)
 }
 
-ks_test_msigdb <- function(target, mx.msigdb){
-  common_genes <- intersect(target$geneSymbol, rownames(mx.msigdb))
+ks_test_msigdb <- function(cormat, mx.msigdb){
+  df_cormat <- as.data.frame(cormat) %>% mutate(geneSymbol = gsub('Exp_', '', rownames(.)))
+  common_genes <- intersect(df_cormat$geneSymbol, rownames(mx.msigdb))
   
-  # reorder target according to the order of rownames of mx.msigdb
-  target %<>% filter(geneSymbol %in% common_genes) %>%
+  # reorder df_cormat according to the order of rownames of mx.msigdb
+  df_cormat %<>% filter(geneSymbol %in% common_genes) %>%
     mutate(geneSymbol = factor(geneSymbol, levels = common_genes))
   mx.msigdb <- mx.msigdb[common_genes, ]
   
-  pbmcapply::pbmclapply(1:(ncol(target)-1), function(i){
+  pbmcapply::pbmclapply(1:(ncol(df_cormat)-1), function(i){
     plyr::aaply(mx.msigdb, 2, function(x){
       within.set <- x > 0
-      up = ks.test(target[!within.set, i], target[within.set, i], alternative = 'greater')$p.value
-      down = ks.test(target[!within.set, i], target[within.set, i], alternative = 'less')$p.value
-      ifelse(log10(up) > log10(down), log10(up), log10(down))
-    }, .parallel = T)
-  })
+      # up = ks.test(df_cormat[!within.set, i], df_cormat[within.set, i], alternative = 'greater')$p.value
+      # down = ks.test(df_cormat[!within.set, i], df_cormat[within.set, i], alternative = 'less')$p.value
+      # ifelse(up < down, up, -down)
+      ks.test(df_cormat[!within.set, i], df_cormat[within.set, i])$p.value
+    }, .parallel = T) 
+  }) %>% do.call(cbind, .) %>% set_colnames(colnames(cormat))
 }
 
-x <- ks_test_msigdb(cor_vp_ge, list_msigdb$GO)
+list_msigdb <- readRDS("../../Utils/data/msigdb_binary_mx.RDS")
+cor_vp_ge <- readRDS("../cormat_Vp_GE.rds")
+
+x <- ks_test_msigdb(cor_vp_ge, list_msigdb$Hallmark)
 # 
 # kstest.deseq.reslist <- function(deseq.reslist, mx.msigdb, genesets, genesets.lookup, gene.lookup){
 #   mx.kstest <- lapply(genesets, function(gs.nm){

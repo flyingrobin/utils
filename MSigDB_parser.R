@@ -31,7 +31,7 @@ gmt.files <- list.files(path = gmt.path, pattern = ".*\\.gmt")
 gmt.list <- lapply(gmt.files, function(x){
   GSA::GSA.read.gmt(paste(gmt.path, x, sep = '/'))
 }) 
-names(gmt.list) <- c('GO', 'Hallmark', 'Pathway', 'Perturb')
+names(gmt.list) <- c('GO', 'Hallmk', 'Pthwy', 'Pertb')
 
 # convert alias to offical gene symbol
 gmt.list.geneset.corrected <-
@@ -48,7 +48,7 @@ gmt.list$Perturb$genesets <- gmt.list.geneset.corrected$Perturb
 gmt.list.flat <- unlist(gmt.list, recursive = F)
 
 gene.union <- unlist(gmt.list.flat[c(1,4,7,10)]) %>% unique()
-names(gmt.list.flat)[c(1,4,7,10)] <- c('GO', 'Hallmk', 'Pthway', 'Pertb')
+names(gmt.list.flat)[c(1,4,7,10)] <- c('GO', 'Hallmk', 'Pthwy', 'Pertb')
 genesets.union <- unlist(gmt.list.flat[c(1,4,7,10)], recursive = F)
 
 # lookup table for geneset names -vs- short names
@@ -74,9 +74,9 @@ mx.msigdb <- mx.msigdb[rownames(mx.msigdb) %in% anno.gene$GeneSymbol, ]
 mx.msigdb.sparse <- Matrix(mx.msigdb, sparse = TRUE)
 
 list_msigdb <- 
-  lapply(c('GO', 'Hallmk', 'Pthway', 'Pertb'), function(i){
+  lapply(c('GO', 'Hallmk', 'Pthwy', 'Pertb'), function(i){
     mx.msigdb.sparse[, grepl(i, colnames(mx.msigdb.sparse))]
-}) %>% set_names(c('GO', 'Hallmark', 'Pathway', 'Perturb'))
+}) %>% set_names(c('GO', 'Hallmk', 'Pthwy', 'Pertb'))
 
 # Gene set description, scraping form GSEA webside using rvest
 genesets.dscrp <- lapply(c(3,6,9,12), function(i){
@@ -89,5 +89,5 @@ genesets.dscrp <- lapply(c(3,6,9,12), function(i){
 genesets.dscrp <- unlist(genesets.dscrp)
 names(genesets.dscrp) <- unlist(gmt.list.flat[c(2,5,8,11)])
 
-save(list_msigdb, genesets.lookup, genesets.dscrp, file = "Documents/Broad/Utils/data/msigdb_binary_mx.RData")
+save(list_msigdb, genesets.lookup, genesets.dscrp, file = "~/Documents/Broad/Utils/data/msigdb_binary_mx.RData")
 saveRDS(list_msigdb, file = "~/Documents/Broad/Utils/data/msigdb_binary_mx.RDS")
